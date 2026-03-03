@@ -1,0 +1,318 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   BEST LANGUAGE TRANSLATION — Corporate Professional Theme
+   OKLCH Color Palette: Deep Navy + Steel Blue + Bright Azure
+   ========================================================= */
+
+/* Cabinet Grotesk — display/headings */
+@font-face {
+  font-family: "Cabinet Grotesk";
+  src: url("/assets/fonts/CabinetGrotesk-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+/* Plus Jakarta Sans — body/UI */
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/assets/fonts/PlusJakartaSans-Variable.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+/* Geist Mono — code/languages */
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* === Core Blue Palette === */
+    /* Background: very light steel blue-white */
+    --background: 0.975 0.006 240;
+    /* Foreground: deep navy */
+    --foreground: 0.18 0.04 255;
+
+    /* Card: pure white with slight blue tint */
+    --card: 1 0 0;
+    --card-foreground: 0.18 0.04 255;
+
+    /* Popover */
+    --popover: 1 0 0;
+    --popover-foreground: 0.18 0.04 255;
+
+    /* Primary: deep royal blue */
+    --primary: 0.38 0.13 260;
+    --primary-foreground: 0.99 0 0;
+
+    /* Secondary: steel gray-blue */
+    --secondary: 0.94 0.015 245;
+    --secondary-foreground: 0.25 0.05 255;
+
+    /* Muted: soft blue-gray */
+    --muted: 0.945 0.012 250;
+    --muted-foreground: 0.52 0.03 250;
+
+    /* Accent: azure/sky blue */
+    --accent: 0.58 0.19 245;
+    --accent-foreground: 0.99 0 0;
+
+    /* Destructive: red */
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+
+    /* Border & Input */
+    --border: 0.88 0.02 250;
+    --input: 0.88 0.02 250;
+    --ring: 0.38 0.13 260;
+
+    /* Brand accent: vivid azure */
+    --brand: 0.58 0.19 245;
+    --brand-light: 0.92 0.06 245;
+    --brand-dark: 0.28 0.12 260;
+
+    /* Surface levels */
+    --surface-1: 0.975 0.006 240;
+    --surface-2: 0.955 0.012 245;
+
+    /* Charts */
+    --chart-1: 0.58 0.19 245;
+    --chart-2: 0.38 0.13 260;
+    --chart-3: 0.72 0.14 210;
+    --chart-4: 0.65 0.16 195;
+    --chart-5: 0.48 0.12 270;
+
+    /* Sidebar */
+    --sidebar: 0.22 0.055 260;
+    --sidebar-foreground: 0.92 0.015 250;
+    --sidebar-primary: 0.58 0.19 245;
+    --sidebar-primary-foreground: 0.99 0 0;
+    --sidebar-accent: 0.30 0.07 260;
+    --sidebar-accent-foreground: 0.92 0.015 250;
+    --sidebar-border: 0.28 0.06 260;
+    --sidebar-ring: 0.58 0.19 245;
+
+    /* Status */
+    --success: 0.62 0.19 145;
+    --success-foreground: 0.99 0 0;
+    --warning: 0.72 0.18 65;
+    --warning-foreground: 0.18 0.04 255;
+  }
+
+  .dark {
+    --background: 0.13 0.03 260;
+    --foreground: 0.94 0.015 250;
+
+    --card: 0.18 0.04 258;
+    --card-foreground: 0.94 0.015 250;
+
+    --popover: 0.20 0.045 258;
+    --popover-foreground: 0.94 0.015 250;
+
+    --primary: 0.58 0.19 245;
+    --primary-foreground: 0.99 0 0;
+
+    --secondary: 0.25 0.055 258;
+    --secondary-foreground: 0.94 0.015 250;
+
+    --muted: 0.22 0.045 258;
+    --muted-foreground: 0.62 0.04 250;
+
+    --accent: 0.58 0.19 245;
+    --accent-foreground: 0.99 0 0;
+
+    --destructive: 0.704 0.191 22.216;
+    --destructive-foreground: 0.99 0 0;
+
+    --border: 0.28 0.055 258;
+    --input: 0.28 0.055 258;
+    --ring: 0.58 0.19 245;
+
+    --brand: 0.65 0.20 245;
+    --brand-light: 0.30 0.08 258;
+    --brand-dark: 0.75 0.22 240;
+
+    --surface-1: 0.16 0.035 260;
+    --surface-2: 0.21 0.05 258;
+
+    --sidebar: 0.16 0.04 262;
+    --sidebar-foreground: 0.94 0.015 250;
+    --sidebar-primary: 0.58 0.19 245;
+    --sidebar-primary-foreground: 0.99 0 0;
+    --sidebar-accent: 0.22 0.05 260;
+    --sidebar-accent-foreground: 0.94 0.015 250;
+    --sidebar-border: 0.25 0.055 260;
+    --sidebar-ring: 0.58 0.19 245;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Cabinet Grotesk", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* === Utility Classes === */
+@layer components {
+  .font-display {
+    font-family: "Cabinet Grotesk", system-ui, sans-serif;
+  }
+
+  .font-mono {
+    font-family: "Geist Mono", monospace;
+  }
+
+  /* Gradient header background */
+  .header-gradient {
+    background: linear-gradient(135deg,
+      oklch(0.22 0.075 265) 0%,
+      oklch(0.18 0.065 258) 40%,
+      oklch(0.25 0.08 250) 100%
+    );
+  }
+
+  /* Translation panel glass effect */
+  .panel-glass {
+    background: oklch(1 0 0 / 0.96);
+    backdrop-filter: blur(8px);
+    border: 1px solid oklch(0.88 0.02 250);
+    box-shadow:
+      0 1px 3px oklch(0.38 0.13 260 / 0.06),
+      0 4px 16px oklch(0.38 0.13 260 / 0.08),
+      0 0 0 1px oklch(0.88 0.02 250 / 0.5);
+  }
+
+  /* Elevated card */
+  .card-elevated {
+    background: oklch(1 0 0);
+    box-shadow:
+      0 1px 2px oklch(0.38 0.13 260 / 0.04),
+      0 2px 8px oklch(0.38 0.13 260 / 0.07),
+      0 0 0 1px oklch(0.88 0.02 250 / 0.6);
+  }
+
+  /* Brand button style */
+  .btn-brand {
+    background: linear-gradient(135deg,
+      oklch(0.42 0.15 258) 0%,
+      oklch(0.36 0.14 265) 100%
+    );
+    color: oklch(0.99 0 0);
+    box-shadow: 0 2px 8px oklch(0.38 0.13 260 / 0.35);
+    transition: all 0.18s ease;
+  }
+
+  .btn-brand:hover {
+    background: linear-gradient(135deg,
+      oklch(0.46 0.16 258) 0%,
+      oklch(0.40 0.15 265) 100%
+    );
+    box-shadow: 0 4px 14px oklch(0.38 0.13 260 / 0.42);
+    transform: translateY(-1px);
+  }
+
+  /* Language badge */
+  .lang-badge {
+    font-family: "Geist Mono", monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    background: oklch(0.58 0.19 245 / 0.12);
+    color: oklch(0.38 0.13 260);
+  }
+
+  /* History item hover */
+  .history-item {
+    transition: all 0.15s ease;
+    border: 1px solid oklch(0.88 0.02 250);
+  }
+
+  .history-item:hover {
+    border-color: oklch(0.58 0.19 245 / 0.4);
+    box-shadow: 0 2px 8px oklch(0.38 0.13 260 / 0.08);
+    transform: translateY(-1px);
+  }
+
+  /* Textarea focus */
+  .translation-textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px oklch(0.58 0.19 245 / 0.25);
+    border-color: oklch(0.58 0.19 245 / 0.6);
+  }
+
+  /* Microphone recording pulse */
+  .mic-pulse {
+    animation: micPulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.2 15 / 0.5); }
+    50% { box-shadow: 0 0 0 8px oklch(0.65 0.2 15 / 0); }
+  }
+
+  /* Divider with text */
+  .divider-text {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .divider-text::before,
+  .divider-text::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: oklch(0.88 0.02 250);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.95 0.008 250);
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.04 250);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.58 0.10 250);
+}
+
+/* Selection color */
+::selection {
+  background: oklch(0.58 0.19 245 / 0.2);
+}
