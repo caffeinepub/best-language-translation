@@ -203,7 +203,7 @@ export function HistoryPanel() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0 }}
               transition={{ duration: 0.2, delay: index * 0.03 }}
-              className="history-item rounded-xl bg-white overflow-hidden"
+              className="history-item rounded-xl bg-card overflow-hidden"
               data-ocid={`history.item.${index + 1}`}
             >
               {/* Language bar */}

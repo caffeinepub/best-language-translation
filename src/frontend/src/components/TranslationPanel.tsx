@@ -134,9 +134,11 @@ export function TranslationPanel() {
     }
   }, [sourceText, sourceLang, targetLang, saveTranslation]);
 
-  const handleMicToggle = useCallback(() => {
+  const handleMicToggle = useCallback(async () => {
     if (!speechSupported) {
-      toast.error("Speech recognition is not supported in your browser.");
+      toast.error(
+        "Speech recognition is not supported in your browser. Try Chrome or Edge.",
+      );
       return;
     }
 
@@ -146,24 +148,69 @@ export function TranslationPanel() {
       return;
     }
 
+    // Request microphone permission explicitly before starting recognition
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (permErr) {
+      const err = permErr as DOMException;
+      if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
+        toast.error(
+          "Microphone access was denied. Please allow microphone permission in your browser settings and try again.",
+        );
+      } else if (
+        err.name === "NotFoundError" ||
+        err.name === "DevicesNotFoundError"
+      ) {
+        toast.error(
+          "No microphone found. Please connect a microphone and try again.",
+        );
+      } else {
+        toast.error(
+          "Could not access the microphone. Please check your browser settings.",
+        );
+      }
+      return;
+    }
+
     const SpeechRecognition = getSpeechRecognition()!;
     const recognition = new SpeechRecognition();
 
     if (sourceLang !== AUTO_DETECT_CODE) {
       recognition.lang = sourceLang;
     }
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.continuous = false;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = Array.from(event.results)
+        .filter((r) => r.isFinal)
         .map((r) => r[0].transcript)
         .join("");
-      setSourceText((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      if (transcript) {
+        setSourceText((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      if (event.error !== "aborted") {
+      const errorMessages: Record<string, string> = {
+        "not-allowed":
+          "Microphone access was denied. Please allow microphone permission in your browser settings.",
+        "no-speech": "No speech was detected. Please try speaking again.",
+        "audio-capture":
+          "No microphone found. Please connect a microphone and try again.",
+        network:
+          "A network error occurred. Please check your connection and try again.",
+        "service-not-allowed":
+          "Speech recognition service is not allowed. Try using Chrome or Edge.",
+        aborted: "", // silent — user or code stopped it
+      };
+      const msg = errorMessages[event.error];
+      if (msg) {
+        toast.error(msg);
+      } else if (event.error !== "aborted") {
         toast.error(`Microphone error: ${event.error}`);
       }
       setIsListening(false);
@@ -173,9 +220,14 @@ export function TranslationPanel() {
       setIsListening(false);
     };
 
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
+    try {
+      recognitionRef.current = recognition;
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      toast.error("Failed to start speech recognition. Please try again.");
+      setIsListening(false);
+    }
   }, [isListening, speechSupported, sourceLang]);
 
   const handleSpeak = useCallback(() => {
@@ -246,8 +298,8 @@ export function TranslationPanel() {
                 disabled={!canSwap}
                 data-ocid="translation.swap_button"
                 className={cn(
-                  "shrink-0 h-10 w-10 border-border bg-white",
-                  "hover:bg-brand-light/30 hover:border-primary/40",
+                  "shrink-0 h-10 w-10 border-border bg-card",
+                  "hover:bg-secondary hover:border-primary/40",
                   "transition-all duration-200",
                   !canSwap && "opacity-40",
                 )}
