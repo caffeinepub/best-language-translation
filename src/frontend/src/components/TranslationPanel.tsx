@@ -80,6 +80,7 @@ export function TranslationPanel() {
   const [isCopied, setIsCopied] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const sessionBaseTextRef = useRef<string>(""); // text before current mic session
   const saveTranslation = useSaveTranslation();
 
   const speechSupported = !!getSpeechRecognition();
@@ -178,19 +179,23 @@ export function TranslationPanel() {
     const SpeechRecognition = getSpeechRecognition()!;
     const recognition = new SpeechRecognition();
 
-    if (sourceLang !== AUTO_DETECT_CODE) {
-      recognition.lang = sourceLang;
-    }
+    // Always set a valid lang -- browsers require a BCP-47 tag.
+    // When auto-detect is selected, fall back to the browser UI locale or "en-US".
+    recognition.lang =
+      sourceLang !== AUTO_DETECT_CODE
+        ? sourceLang
+        : navigator.language || "en-US";
     recognition.interimResults = true;
     recognition.continuous = false;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      // Build the full transcript from this session (interim + final)
       const transcript = Array.from(event.results)
-        .filter((r) => r.isFinal)
         .map((r) => r[0].transcript)
         .join("");
       if (transcript) {
-        setSourceText((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        const base = sessionBaseTextRef.current;
+        setSourceText(base ? `${base} ${transcript}` : transcript);
       }
     };
 
@@ -222,13 +227,14 @@ export function TranslationPanel() {
 
     try {
       recognitionRef.current = recognition;
+      sessionBaseTextRef.current = sourceText.trimEnd();
       recognition.start();
       setIsListening(true);
     } catch {
       toast.error("Failed to start speech recognition. Please try again.");
       setIsListening(false);
     }
-  }, [isListening, speechSupported, sourceLang]);
+  }, [isListening, speechSupported, sourceLang, sourceText]);
 
   const handleSpeak = useCallback(() => {
     if (!translatedText) return;
