@@ -1,11 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/sonner";
+import { Moon, Sun } from "lucide-react";
 import { motion } from "motion/react";
 import { HistoryPanel } from "./components/HistoryPanel";
 import { TranslationPanel } from "./components/TranslationPanel";
+import { useTheme } from "./hooks/useTheme";
 
 function Header() {
+  const { isDark, toggleTheme } = useTheme();
+
   return (
     <header className="header-gradient border-b border-white/10">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
@@ -15,8 +20,28 @@ function Header() {
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="flex items-center justify-between gap-3"
         >
-          {/* Left: Logo + Title */}
-          <div className="flex items-center gap-3 min-w-0">
+          {/* Far Left: Theme Toggle */}
+          <div className="shrink-0">
+            <Button
+              data-ocid="header.theme_toggle"
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label={
+                isDark ? "Switch to light mode" : "Switch to dark mode"
+              }
+              className="w-9 h-9 rounded-lg text-white/80 hover:text-white hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/40 transition-all duration-200"
+            >
+              {isDark ? (
+                <Sun className="w-4.5 h-4.5" />
+              ) : (
+                <Moon className="w-4.5 h-4.5" />
+              )}
+            </Button>
+          </div>
+
+          {/* Center: Logo + Title */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             {/* App Logo */}
             <div
               data-ocid="header.app_logo"
@@ -87,6 +112,9 @@ function Footer() {
 }
 
 export default function App() {
+  // Initialize theme on app mount (applies dark class from localStorage)
+  useTheme();
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />

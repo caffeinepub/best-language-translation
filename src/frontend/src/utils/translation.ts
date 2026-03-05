@@ -5,6 +5,13 @@ export interface TranslationResult {
   detectedLang?: string;
 }
 
+// MyMemory uses simple 2-letter codes; normalize complex codes
+function normalizeForMyMemory(code: string): string {
+  if (!code || code === "auto") return "en";
+  // zh-CN -> zh, zh-TW -> zh-TW (MyMemory accepts zh-CN and zh-TW)
+  return code;
+}
+
 export async function translateText(
   text: string,
   sourceLang: string,
@@ -13,39 +20,81 @@ export async function translateText(
   const isAutoDetect = sourceLang === "auto";
 
   let detectedLang: string | undefined;
-  let effectiveSourceLang = sourceLang;
+  let effectiveSourceLang = normalizeForMyMemory(sourceLang);
+  const normalizedTarget = normalizeForMyMemory(targetLang);
 
   if (isAutoDetect) {
-    // Step 1: detect language via auto-detect to English
-    const detectUrl = `${MYMEMORY_API}?q=${encodeURIComponent(text)}&langpair=autodetect|en`;
-    const detectRes = await fetch(detectUrl);
-    if (!detectRes.ok) throw new Error("Language detection failed");
-    const detectData = await detectRes.json();
-    detectedLang =
-      detectData.responseData?.detectedLanguage ||
-      detectData.matches?.[0]?.properties?.["detected-language"] ||
-      "en";
-    effectiveSourceLang = detectedLang ?? "en";
+    // Use MyMemory with en as a dummy target to detect the language
+    const detectUrl = `${MYMEMORY_API}?q=${encodeURIComponent(text)}&langpair=en|fr`;
+    try {
+      const detectRes = await fetch(detectUrl);
+      if (detectRes.ok) {
+        const detectData = await detectRes.json();
+        // Try multiple fields where MyMemory might put detected language
+        const detected =
+          detectData.responseData?.detectedLanguage ||
+          detectData.matches?.[0]?.de ||
+          null;
+        if (detected && detected !== "null" && detected.length > 0) {
+          detectedLang = detected;
+          effectiveSourceLang = detected;
+        } else {
+          // Fallback: assume English if detection fails
+          effectiveSourceLang = "en";
+        }
+      }
+    } catch {
+      effectiveSourceLang = "en";
+    }
   }
 
   // If source and target are the same after detection, return original
-  if (effectiveSourceLang === targetLang) {
+  if (effectiveSourceLang === normalizedTarget) {
     return { translatedText: text, detectedLang };
   }
 
-  const langpair = `${effectiveSourceLang}|${targetLang}`;
-  const url = `${MYMEMORY_API}?q=${encodeURIComponent(text)}&langpair=${langpair}`;
+  const langpair = `${effectiveSourceLang}|${normalizedTarget}`;
+  const url = `${MYMEMORY_API}?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Translation request failed");
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new Error(
+      "Network error. Please check your connection and try again.",
+    );
+  }
+
+  if (!res.ok)
+    throw new Error(`Translation request failed (HTTP ${res.status})`);
+
   const data = await res.json();
 
-  const translated: string = data.responseData?.translatedText;
-  if (!translated) throw new Error("No translation returned");
+  // MyMemory returns responseStatus 200 on success, 429 on quota exceeded
+  if (data.responseStatus && data.responseStatus === 429) {
+    throw new Error(
+      "Translation quota exceeded. Please wait a moment and try again.",
+    );
+  }
 
-  // MyMemory sometimes returns "QUERY LENGTH LIMIT EXCEEDED"
-  if (translated.toUpperCase().includes("QUERY LENGTH LIMIT")) {
+  const translated: string = data.responseData?.translatedText;
+  if (!translated)
+    throw new Error("No translation returned. Please try again.");
+
+  // MyMemory sometimes returns error strings in the translated field
+  const upperTranslated = translated.toUpperCase();
+  if (upperTranslated.includes("QUERY LENGTH LIMIT")) {
     throw new Error("Text is too long. Please shorten the input.");
+  }
+  if (upperTranslated.includes("INVALID LANGUAGE PAIR")) {
+    throw new Error(
+      "This language pair is not supported. Please try a different combination.",
+    );
+  }
+  if (upperTranslated.includes("MYMEMORY WARNING")) {
+    throw new Error(
+      "Translation service limit reached. Please try again later.",
+    );
   }
 
   return {

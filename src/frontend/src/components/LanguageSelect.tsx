@@ -30,22 +30,23 @@ export function LanguageSelect({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         className={cn(
-          "h-10 bg-white border-border text-foreground font-sans font-medium text-sm",
-          "focus:ring-2 focus:ring-primary/20 focus:border-primary/50",
-          "hover:border-primary/40 transition-colors",
+          "lang-selector-trigger",
+          "h-10 w-full font-sans font-semibold text-sm",
+          "transition-colors duration-150",
+          "focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary",
           className,
         )}
         data-ocid={dataOcid}
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="bg-white border-border shadow-lg">
+      <SelectContent className="bg-popover border-border shadow-xl">
         <ScrollArea className="h-64">
           {languages.map((lang) => (
             <SelectItem
               key={lang.code}
               value={lang.code}
-              className="text-sm font-sans cursor-pointer hover:bg-brand-light/30 focus:bg-brand-light/30"
+              className="text-sm font-sans cursor-pointer text-popover-foreground hover:bg-primary/10 focus:bg-primary/10"
             >
               <span>{lang.name}</span>
               {lang.code !== "auto" && (

@@ -46,6 +46,7 @@ interface SpeechRecognitionInstance extends EventTarget {
   lang: string;
   interimResults: boolean;
   continuous: boolean;
+  maxAlternatives: number;
   start: () => void;
   stop: () => void;
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
@@ -138,7 +139,7 @@ export function TranslationPanel() {
   const handleMicToggle = useCallback(async () => {
     if (!speechSupported) {
       toast.error(
-        "Speech recognition is not supported in your browser. Try Chrome or Edge.",
+        "Speech recognition is not supported in your browser. Please use Chrome or Edge.",
       );
       return;
     }
@@ -149,44 +150,43 @@ export function TranslationPanel() {
       return;
     }
 
-    // Request microphone permission explicitly before starting recognition
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (permErr) {
-      const err = permErr as DOMException;
-      if (
-        err.name === "NotAllowedError" ||
-        err.name === "PermissionDeniedError"
-      ) {
-        toast.error(
-          "Microphone access was denied. Please allow microphone permission in your browser settings and try again.",
-        );
-      } else if (
-        err.name === "NotFoundError" ||
-        err.name === "DevicesNotFoundError"
-      ) {
-        toast.error(
-          "No microphone found. Please connect a microphone and try again.",
-        );
-      } else {
-        toast.error(
-          "Could not access the microphone. Please check your browser settings.",
-        );
+    // Check microphone permission state without triggering a new getUserMedia call
+    // which can conflict with SpeechRecognition in Chrome
+    if (navigator.permissions) {
+      try {
+        const permStatus = await navigator.permissions.query({
+          name: "microphone" as PermissionName,
+        });
+        if (permStatus.state === "denied") {
+          toast.error(
+            "Microphone access is blocked. Please allow microphone access in your browser's address bar or settings, then try again.",
+          );
+          return;
+        }
+      } catch {
+        // permissions.query not supported — proceed and let SpeechRecognition handle it
       }
-      return;
     }
 
     const SpeechRecognition = getSpeechRecognition()!;
     const recognition = new SpeechRecognition();
 
-    // Always set a valid lang -- browsers require a BCP-47 tag.
+    // Always set a valid BCP-47 lang tag -- Chrome requires this.
     // When auto-detect is selected, fall back to the browser UI locale or "en-US".
-    recognition.lang =
-      sourceLang !== AUTO_DETECT_CODE
-        ? sourceLang
-        : navigator.language || "en-US";
+    let lang = navigator.language || "en-US";
+    if (sourceLang !== AUTO_DETECT_CODE) {
+      // Map language codes to valid BCP-47 tags Chrome accepts
+      const bcp47Map: Record<string, string> = {
+        "zh-CN": "zh-CN",
+        "zh-TW": "zh-TW",
+        zh: "zh-CN",
+      };
+      lang = bcp47Map[sourceLang] ?? sourceLang;
+    }
+    recognition.lang = lang;
     recognition.interimResults = true;
     recognition.continuous = false;
+    recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       // Build the full transcript from this session (interim + final)
@@ -202,21 +202,27 @@ export function TranslationPanel() {
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       const errorMessages: Record<string, string> = {
         "not-allowed":
-          "Microphone access was denied. Please allow microphone permission in your browser settings.",
-        "no-speech": "No speech was detected. Please try speaking again.",
+          "Microphone access was denied. Please click the lock icon in your browser's address bar, allow microphone access, and try again.",
+        "permission-denied":
+          "Microphone access was denied. Please allow microphone access in your browser settings.",
+        "no-speech":
+          "No speech was detected. Please speak clearly and try again.",
         "audio-capture":
           "No microphone found. Please connect a microphone and try again.",
         network:
-          "A network error occurred. Please check your connection and try again.",
+          "Speech recognition requires an internet connection. Please check your network and try again.",
         "service-not-allowed":
-          "Speech recognition service is not allowed. Try using Chrome or Edge.",
+          "Speech recognition is not available. Please make sure you are using Chrome or Edge over HTTPS.",
         aborted: "", // silent — user or code stopped it
+        "bad-grammar": "", // silent — internal grammar issue
       };
       const msg = errorMessages[event.error];
       if (msg) {
         toast.error(msg);
-      } else if (event.error !== "aborted") {
-        toast.error(`Microphone error: ${event.error}`);
+      } else if (event.error && event.error !== "aborted") {
+        toast.error(
+          `Microphone error: ${event.error}. Please refresh the page and try again.`,
+        );
       }
       setIsListening(false);
     };
@@ -230,9 +236,19 @@ export function TranslationPanel() {
       sessionBaseTextRef.current = sourceText.trimEnd();
       recognition.start();
       setIsListening(true);
-    } catch {
-      toast.error("Failed to start speech recognition. Please try again.");
-      setIsListening(false);
+    } catch (startErr) {
+      const errMsg =
+        startErr instanceof Error ? startErr.message : String(startErr);
+      if (errMsg.toLowerCase().includes("already started")) {
+        // Recognition already running — stop and reset
+        recognition.stop();
+        setIsListening(false);
+      } else {
+        toast.error(
+          "Failed to start the microphone. Please refresh the page and try again.",
+        );
+        setIsListening(false);
+      }
     }
   }, [isListening, speechSupported, sourceLang, sourceText]);
 
@@ -304,13 +320,15 @@ export function TranslationPanel() {
                 disabled={!canSwap}
                 data-ocid="translation.swap_button"
                 className={cn(
-                  "shrink-0 h-10 w-10 border-border bg-card",
-                  "hover:bg-secondary hover:border-primary/40",
+                  "shrink-0 h-10 w-10",
+                  "bg-card text-card-foreground",
+                  "border-2 border-primary/40",
+                  "hover:bg-primary hover:text-primary-foreground hover:border-primary",
                   "transition-all duration-200",
                   !canSwap && "opacity-40",
                 )}
               >
-                <ArrowLeftRight className="h-4 w-4 text-foreground" />
+                <ArrowLeftRight className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
